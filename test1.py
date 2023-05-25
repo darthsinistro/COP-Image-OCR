@@ -4,6 +4,7 @@ import numpy as np
 import random
 import easyocr
 import csv
+import pandas as pd
 
 reader = easyocr.Reader(['en'], gpu=False)
 
@@ -40,8 +41,6 @@ def display_images(url_list):
     
     cv2.destroyAllWindows()
 
-import csv
-
 def read_csv_column(csv_file, column_name):
     values = []
 
@@ -58,7 +57,33 @@ def read_csv_column(csv_file, column_name):
 csv_file = 'drone_images.csv'  # Replace with the path to your CSV file
 column_name = 'Img URL'
 
-url_list = read_csv_column(csv_file, column_name)
+# url_list = read_csv_column(csv_file, column_name)
 
 # Call the display_images function
-display_images(url_list)
+# display_images(url_list)
+
+def readtext_from_images(csv_path, img_col, new_col):
+    df = pd.read_csv(csv_path)
+    image_values = df[img_col].tolist()
+    text_values = []
+
+    for img_path in image_values:
+        try:
+            image = download_image(img_path)
+            text = reader.readtext(image, detail=0)
+            conc_text = ' '.join(text)
+            text_values.append(conc_text)
+        except Exception as e:
+            print(f"Error processing image {img_path}: {str(e)}")
+            text_values.append("")
+
+    df[new_col] = text_values
+    df.to_csv(csv_path, index=False)
+
+
+# Example usage
+csv_path = 'drone_images.csv'  # Replace with the path to your CSV file
+img_col = 'Img URL'  # Replace with the name of the column containing image paths
+new_col = 'Text'  # Replace with the desired name for the new column
+
+readtext_from_images(csv_path, img_col, new_col)
